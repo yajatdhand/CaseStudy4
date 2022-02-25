@@ -1,0 +1,255 @@
+CASE STUDY 4 :- 25th FEB
+=====================
+
+##BOOK MANAGEMENT APPLICATION IN LAYERED ARCHITECTURE WITH DATABASE CONNECTIVITY
+---------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------
+BookBean CLASS :-
+-----------------------------
+
+package com.ac.bean;
+
+import java.io.Serializable;
+
+public class BookBean implements Serializable {
+	
+	//Private Data Members of BookBean 
+	//BookBean class contains the properties exhibited by each Book
+	
+	private int bookId;
+	private String bookTitle;
+	private int bookPrice;
+	private String grade;
+	
+	//Implementing Getters and Setters
+	
+	public int getBookId() { //getting BookId
+		return bookId;
+	}
+
+
+
+	public void setBookId(int bookId) { //Setting BookId
+		this.bookId = bookId;
+	}
+
+
+
+	public String getBookTitle() { //getting BookTitle
+		return bookTitle;
+	}
+
+
+
+	public void setBookTitle(String bookTitle) { //Setting BookTitle
+		this.bookTitle = bookTitle;
+	}
+
+
+
+	public int getBookPrice() { //Getting BookPrice
+		return bookPrice;
+	}
+
+
+
+	public void setBookPrice(int bookPrice) { //Setting BookPrice
+		this.bookPrice = bookPrice;
+	}
+
+
+
+	public String getGrade() { //Getting grade
+		return grade;
+	}
+
+
+
+	public void setGrade(String grade) { //Setting grade
+		this.grade = grade;
+	}
+
+}
+------------------------------------------
+Service CLASS :- Service Layer
+------------------------------------------
+package com.ac.service;
+
+import com.ac.DAO.DAO;
+import com.ac.bean.BookBean;
+
+//Book Service Class in which services provided by Book Management Application are present
+public class BookService {
+	
+	//AddBook Service
+	public int addBookService(int bid, String btitle, int bprice)
+	{
+		String bgrade = "";
+		
+		if(bprice<=500)
+			bgrade = "C";
+		else if(bprice>500 && bprice<=1000)
+			bgrade = "B";
+		else
+			bgrade = "A";
+		
+		DAO d1 = new DAO();
+		BookBean b1 = new BookBean();
+		b1.setBookId(bid);
+		b1.setBookTitle(btitle);
+		b1.setBookPrice(bprice);
+		b1.setGrade(bgrade);
+		
+		int updateRes = 0;
+		
+		try {
+		updateRes = d1.addBook(b1);
+		return updateRes;
+		
+		}
+		catch(Exception e)
+		{
+			System.out.println(e.toString());
+			return 0;
+		}
+	}
+}
+--------------------------------
+DAO Class:- DAO Layer
+--------------------------------
+
+package com.ac.DAO;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+
+import com.ac.bean.BookBean;
+
+//DAO class that interacts with the database and contains internal functionality
+
+public class DAO {
+	
+	
+	public int addBook(BookBean b) // AddBook Method Internal Implementation
+	{
+		Connection con = null;
+		PreparedStatement ps1 = null;
+		try {
+		
+		con = DB.getConnection(); //Getting connection from Database Class
+		
+		String insert = "insert into book values(?, ?, ?, ?)";
+		ps1 = con.prepareStatement(insert);
+		ps1.setInt(1, b.getBookId());
+		ps1.setString(2, b.getBookTitle());
+		ps1.setInt(3, b.getBookPrice());
+		ps1.setString(4, b.getGrade());
+		int updateCount = ps1.executeUpdate();
+		con.close();
+		return updateCount;
+		}
+		
+		catch(Exception e)
+		{
+			System.out.println(e.toString());
+			return 0;
+		}
+	}
+	
+	
+	public ArrayList getBookDetails(int bid) throws Exception //GetBookDetails Method Implementation
+	{
+		Connection con = null;
+		PreparedStatement ps1 = null;
+		ResultSet rs = null;
+		
+		con = DB.getConnection();
+		String s1 = "Select * from book where bid=?";
+		ps1 = con.prepareStatement(s1);
+		ps1.setInt(1, bid);
+		rs = ps1.executeQuery();
+		
+		ArrayList result = new ArrayList();
+		if(rs.next())
+		{
+			result.add(rs.getString(1));
+			result.add(rs.getString(2));
+			result.add(rs.getString(4));
+		}
+		else
+		{
+			result.add("Invalid id");
+		}
+		return result;		
+	}
+
+	public static void main(String[] args) {
+
+		
+		
+	}
+
+}
+------------------------------------
+DB Class :- Database Layer
+------------------------------------
+package com.ac.DAO;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+//Database Class that initiates connection with PostgreSQL databse 
+
+public class DB {
+
+	public static Connection getConnection() throws ClassNotFoundException, SQLException{
+
+	//Loading Driver Class
+		
+		Class.forName("org.postgresql.Driver");
+		
+	//Creating Connection
+		
+		Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost/one", "postgres","abc@123");
+		return conn;
+		
+	}
+
+}
+------------------------------------------------------------------------
+BookUI Class :- UI Layer(to which the user will interact)
+------------------------------------------------------------------------
+package com.ac.Ui;
+
+import java.util.Scanner;
+
+import com.ac.service.BookService;
+
+//This is the BookUI class that interacts with the user and 
+//does not contain internal implementation of methods and connectivity
+
+public class BookUI {
+
+	public static void main(String[] args) {
+
+		int bid =0;
+		String btitle = "";
+		int bprice =0;
+		Scanner sc = new Scanner(System.in);
+		System.out.println("Enter Book id ");
+		bid = sc.nextInt();
+		System.out.println("Enter Book title");
+		btitle = sc.next();
+		System.out.println("Enter Book price");
+		bprice = sc.nextInt();
+		BookService s1 = new BookService();
+		int updateCount = s1.addBookService(bid, btitle, bprice);
+		System.out.println("Inserted "+updateCount+" successfully");
+		
+		
+	}
+
+}
